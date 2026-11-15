@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Earful">
+<meta name="theme-color" content="#0f0f10">
+<title>Earful — listen to Reddit</title>
+<style>
+:root{--bg:#0f0f10;--card:#17171a;--line:#26262b;--text:#e8e8ec;--dim:#9b9ba5;--acc:#ff7a45;--hl:rgba(255,122,69,.13);--safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px)}
+[hidden]{display:none!important}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a{color:#8fb8ff}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:rgba(15,15,16,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:calc(var(--safe-t) + 6px) 8px 0;border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:4px;height:44px}
+.hrow button{width:40px;height:40px;border-radius:10px;font-size:20px;display:grid;place-items:center}
+.hrow button:active{background:var(--line)}
+#htitle{flex:1;font-weight:650;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#star{font-size:20px;color:var(--dim)}#star.on{color:var(--acc)}
+#sform{display:flex;gap:8px;padding:4px 4px 8px;align-items:center}
+#sform[hidden]{display:none}
+#q{flex:1;background:var(--card);border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:16px;padding:9px 12px;outline:none}
+#scope{font-size:13px;color:var(--dim);white-space:nowrap}
+.rowscroll{display:flex;gap:6px;overflow-x:auto;padding:2px 4px 8px;scrollbar-width:none}
+.rowscroll::-webkit-scrollbar{display:none}
+.rowscroll[hidden]{display:none}
+.chip{flex:none;padding:5px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;color:var(--dim);text-decoration:none}
+.chip.on{color:var(--text);border-color:var(--acc);background:var(--hl)}
+main{padding:8px 0 calc(150px + var(--safe-b))}
+.msg{padding:40px 20px;text-align:center;color:var(--dim)}
+.item{position:relative;padding:12px 14px;border-bottom:1px solid var(--line);transition:background .25s}
+.item.now{background:var(--hl);box-shadow:inset 3px 0 0 var(--acc)}
+.meta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);flex-wrap:wrap}
+.meta .au{color:#c9c9d1;font-weight:600}
+.meta .opb{color:var(--acc);font-weight:700;font-size:11px}
+.meta .sp{flex:1}
+.pbtn{width:34px;height:30px;border-radius:8px;font-size:13px;color:var(--dim);border:1px solid var(--line);flex:none}
+.item.now .pbtn{color:var(--acc);border-color:var(--acc)}
+.ptitle{font-weight:600;font-size:16.5px;line-height:1.35;margin:3px 0 2px}
+.op .ptitle{font-size:19px}
+.snip{color:var(--dim);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.body{margin-top:4px;word-wrap:break-word;overflow-wrap:anywhere}
+.body p{margin:0 0 .55em}.body p:last-child{margin:0}
+.body blockquote{margin:0 0 .55em;padding-left:10px;border-left:3px solid var(--line);color:var(--dim)}
+.body pre{white-space:pre-wrap;font-size:13px;background:#0b0b0c;padding:8px;border-radius:6px}
+.thumbrow{display:flex;gap:10px}.thumbrow>div{flex:1;min-width:0}
+.thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;flex:none;background:var(--card)}
+.big{max-width:100%;max-height:70vh;border-radius:10px;margin-top:8px;display:block}
+.linkout{display:inline-block;margin-top:6px;font-size:14px}
+.c{padding-top:9px;padding-bottom:9px}
+.c .rail{position:absolute;top:0;bottom:0;border-left:2px solid var(--line)}
+.more{font-size:13px;color:var(--dim);padding:6px 14px}
+.subcard{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.subcard a{flex:1;min-width:0;text-decoration:none;color:var(--text)}
+.subcard small{display:block;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sechead{padding:12px 14px 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.loadmore{display:block;margin:14px auto;padding:9px 18px;border:1px solid var(--line);border-radius:10px;color:var(--dim)}
+#pill{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(120px + var(--safe-b));z-index:11;background:var(--acc);color:#1a0d06;font-weight:650;font-size:14px;padding:8px 14px;border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+#pill[hidden]{display:none}
+#player{position:fixed;left:0;right:0;bottom:0;z-index:12;background:rgba(20,20,23,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 10px calc(8px + var(--safe-b))}
+#np{display:block;width:100%;text-align:left;padding:2px 4px 6px;min-height:40px}
+#npTitle{display:block;font-size:12px;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#npText{display:block;font-size:14px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctrls{display:flex;align-items:center;justify-content:space-between}
+.ctrls button{height:46px;min-width:44px;border-radius:12px;font-size:20px;display:grid;place-items:center}
+.ctrls button:active{background:var(--line)}
+#playBtn{width:58px;height:58px;border-radius:50%;background:var(--acc);color:#1a0d06;font-size:22px}
+#rateBtn{font-size:14px;font-weight:650;color:var(--dim)}
+.small{font-size:16px!important;color:var(--dim)}
+#sheet,#eyes{position:fixed;inset:0;z-index:20}
+#sheet[hidden],#eyes[hidden]{display:none}
+#sheet{background:rgba(0,0,0,.55);display:flex;align-items:flex-end}
+.panel{width:100%;background:var(--card);border-radius:16px 16px 0 0;padding:16px 18px calc(20px + var(--safe-b));max-height:85vh;overflow:auto}
+.panel h3{margin:0 0 12px;font-size:17px}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.set small{display:block;color:var(--dim);font-size:12.5px}
+.set select{max-width:55%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;font-size:14px}
+.set input[type=checkbox]{width:22px;height:22px;accent-color:var(--acc)}
+.set input[type=range]{width:45%;accent-color:var(--acc)}
+.done{margin-top:14px;width:100%;padding:12px;border-radius:12px;background:var(--acc);color:#1a0d06;font-weight:700}
+#eyes{background:#000;display:flex;flex-direction:column;padding:calc(var(--safe-t) + 20px) 22px calc(var(--safe-b) + 24px)}
+#eyes .et{color:#5a4030;font-size:13px}
+#eyes .ea{color:#4d4d55;font-size:15px;margin-top:22px}
+#eyes .ex{flex:1;color:#6f6f78;font-size:24px;line-height:1.45;margin-top:6px;overflow:hidden}
+#eyes .eb{display:flex;justify-content:space-around;align-items:center}
+#eyes .eb button{width:84px;height:84px;border-radius:50%;border:1px solid #222;color:#666;font-size:28px}
+#eyes .eb #ePlay{width:110px;height:110px;color:#a0583a;border-color:#3a2418;font-size:34px}
+#eClose{position:absolute;top:calc(var(--safe-t) + 12px);right:14px;color:#555;font-size:14px;padding:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <button id="back" aria-label="Back">‹</button>
+    <div id="htitle">Earful</div>
+    <button id="star" aria-label="Save subreddit" hidden>☆</button>
+    <button id="sbtn" aria-label="Search">⌕</button>
+  </div>
+  <form id="sform" hidden>
+    <input id="q" type="search" enterkeyhint="search" placeholder="Search posts, or r/name" autocomplete="off">
+    <label id="scope" hidden><input type="checkbox" id="scopeCb"> <span></span></label>
+  </form>
+  <nav id="chips" class="rowscroll"></nav>
+  <nav id="sorts" class="rowscroll"></nav>
+</header>
+<main id="main"></main>
+<button id="pill" hidden>↓ Back to what's playing</button>
+
+<div id="player">
+  <button id="np"><span id="npTitle">Nothing playing</span><span id="npText">Tap ▶ on any post or comment, or tap a comment to listen from there</span></button>
+  <div class="ctrls">
+    <button id="eyeBtn" aria-label="Eyes-off mode" style="font-size:22px;color:var(--dim)">☾</button>
+    <button id="prevBtn" aria-label="Previous">⏮</button>
+    <button id="playBtn" aria-label="Play">▶</button>
+    <button id="nextBtn" aria-label="Next">⏭</button>
+    <button id="branchBtn" class="small" aria-label="Skip to next top-level comment">⤼</button>
+    <button id="rateBtn" aria-label="Speed">1.0×</button>
+    <button id="gearBtn" class="small" aria-label="Settings">⚙</button>
+  </div>
+</div>
+
+<div id="sheet" hidden>
+  <div class="panel">
+    <h3>Listening settings</h3>
+    <div class="set"><span>Voice</span><select id="voiceSel"></select></div>
+    <div class="set"><span>Speed <small id="rateLbl"></small></span><input id="rateRange" type="range" min="0.6" max="2.4" step="0.1"></div>
+    <div class="set"><span>Say who's talking<small>"username: …" before each comment</small></span><input type="checkbox" id="optAnnounce"></div>
+    <div class="set"><span>Auto-play next post<small>When a thread ends, move to the next post in the feed</small></span><input type="checkbox" id="optAutoNext"></div>
+    <div class="set"><span>Switch when I open a thread<small>While listening, opening a thread starts reading it</small></span><input type="checkbox" id="optSwitch"></div>
+    <div class="set"><span>Follow along<small>Scroll to what's being read (pauses while you scroll)</small></span><input type="checkbox" id="optFollow"></div>
+    <div class="set"><span>Read post text in feeds<small>Otherwise feeds read titles only</small></span><input type="checkbox" id="optFeedBody"></div>
+    <div class="set"><span>Comment order</span><select id="csortSel"><option value="confidence">Best</option><option value="top">Top</option><option value="new">New</option><option value="controversial">Controversial</option><option value="qa">Q&amp;A</option></select></div>
+    <button class="done" id="sheetDone">Done</button>
+  </div>
+</div>
+
+<div id="eyes" hidden>
+  <button id="eClose">Exit</button>
+  <div class="et" id="eTitle"></div>
+  <div class="ea" id="eAuthor"></div>
+  <div class="ex" id="eText"></div>
+  <div class="eb">
+    <button id="ePrev" aria-label="Previous">⏮</button>
+    <button id="ePlay" aria-label="Play or pause">▶</button>
+    <button id="eNext" aria-label="Next">⏭</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const API = 'https://www.reddit.com';
+const $ = s => document.querySelector(s);
+const main = $('#main');
+
+/* ---------- storage ---------- */
+function lsGet(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+const S = Object.assign({rate:1.1, voice:'', announce:true, autoNext:true, switchOnOpen:true, follow:true, feedBody:false, csort:'confidence'}, lsGet('earful.settings', {}));
+const saveS = () => lsSet('earful.settings', S);
+let subs = lsGet('earful.subs', ['popular','AskReddit','explainlikeimfive','todayilearned','AskHistorians']);
+const saveSubs = () => lsSet('earful.subs', subs);
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmt(n){ n = +n || 0; if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'')+'m'; if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'k'; return String(n); }
+function ago(t){ const s = Date.now()/1000 - t; if (s < 3600) return Math.max(1, Math.round(s/60))+'m'; if (s < 86400) return Math.round(s/3600)+'h'; if (s < 2592000) return Math.round(s/86400)+'d'; if (s < 31536000) return Math.round(s/2592000)+'mo'; return Math.round(s/31536000)+'y'; }
+const isGone = b => !b || b === '[deleted]' || b === '[removed]';
+const IMG_RE = /\.(jpe?g|png|gif|webp)(\?.*)?$/i;
+
+async function getJSON(path){
+  const url = API + path + (path.includes('?') ? '&' : '?') + 'raw_json=1';
+  let r;
+  try { r = await fetch(url); } catch(e){ throw new Error("Couldn't reach Reddit. Check your connection (or Reddit may be rate-limiting — wait a minute)."); }
+  if (r.status === 429) throw new Error('Reddit is rate-limiting requests. Give it a minute and try again.');
+  if (r.status === 403) throw new Error('Reddit blocked this request (private or quarantined subreddit?).');
+  if (r.status === 404) throw new Error('Not found.');
+  if (!r.ok) throw new Error('Reddit returned an error ('+r.status+').');
+  return r.json();
+}
+
+/* Markdown -> safe HTML (minimal) */
+function mdHtml(s){
+  if (!s) return '';
+  const blocks = s.replace(/\r/g,'').split(/\n{2,}/);
+  return blocks.map(b => {
+    if (/^```/.test(b) || /^( {4}|\t)/.test(b)) return '<pre>'+esc(b.replace(/^```\w*\n?|```$/g,''))+'</pre>';
+    const quote = /^\s*>/.test(b);
+    if (quote) b = b.replace(/^\s*>\s?/gm,'');
+    let h = esc(b);
+    h = h.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    h = h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+    h = h.replace(/(^|[\s(])\/?r\/([A-Za-z0-9_]{2,21})\b/g, '$1<a href="#/r/$2/hot">r/$2</a>');
+    h = h.replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<i>$2</i>').replace(/~~([^~\n]+)~~/g,'<s>$1</s>');
+    h = h.replace(/^#{1,6}\s*/gm,'').replace(/&amp;#x200B;|​/g,'').replace(/\n/g,'<br>');
+    return quote ? '<blockquote>'+h+'</blockquote>' : '<p>'+h+'</p>';
+  }).join('');
+}
+
+/* Markdown -> text that sounds good spoken */
+function speakable(s){
+  if (!s) return '';
+  s = s.replace(/\r/g,'')
+    .replace(/```[\s\S]*?```/g,' (code block) ')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,' (image) ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/https?:\/\/(www\.)?([^\/\s]+)\S*/g,' (link to $2) ')
+    .replace(/(^|[\s(])\/?u\/([\w-]+)/g,'$1$2')
+    .replace(/(^|[\s(])\/?r\/(\w+)/g,'$1r slash $2')
+    .replace(/&#x200B;|​/g,'')
+    .replace(/^\s*>+\s?/gm,'')
+    .replace(/^#{1,6}\s*/gm,'')
+    .replace(/^\s*[-*+]\s+/gm,'')
+    .replace(/^\s*\|?[\s:-]*\|[\s|:-]*$/gm,'')
+    .replace(/\|/g,', ')
+    .replace(/(\*\*|__|~~|\^|\*|(?<=\s|^)_|_(?=\s|$))/g,'')
+    .replace(/&amp;/g,'and').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  return s.split('\n').map(l => l.trim()).filter(Boolean)
+    .map(l => /[.!?…:;,)"'”]$/.test(l) ? l : l + '.').join(' ')
+    .replace(/\s{2,}/g,' ').trim();
+}
+const who = a => (!a || a === '[deleted]') ? 'Someone' : a.replace(/[_-]+/g,' ').trim();
+
+function speechText(it){
+  if (it.kind === 'post'){
+    let t = `${speakable(it.title)} In r slash ${it.sub}, ${it.n} comments.`;
+    if (S.feedBody && it.body) t += ' ' + clip(speakable(it.body), 500);
+    return t;
+  }
+  if (it.kind === 'op'){
+    let t = `${speakable(it.title)} Posted by ${who(it.author)} in r slash ${it.sub}.`;
+    if (it.body) t += ' ' + speakable(it.body);
+    else if (it.img) t += ' This post is an image.';
+    else if (it.link) { try{ t += ' This post links to ' + new URL(it.link).hostname.replace(/^www\./,'') + '.'; }catch(e){} }
+    return t;
+  }
+  if (it.kind === 'comment'){
+    if (isGone(it.body)) return '';
+    const body = speakable(it.body);
+    if (!S.announce) return it.depth ? 'Reply. ' + body : body;
+    const name = who(it.author) + (it.isOp ? ', the poster,' : '');
+    return it.depth ? `${name} replies: ${body}` : `${name} says: ${body}`;
+  }
+  return '';
+}
+function clip(s, n){ if (s.length <= n) return s; const c = s.slice(0, n); const i = c.lastIndexOf('. '); return (i > n*0.5 ? c.slice(0, i+1) : c + '…'); }
+
+/* Split into short chunks: avoids browser TTS cutting off long utterances */
+function chunks(text, max = 220){
+  const sents = text.match(/[^.!?…]+[.!?…]+["'”’)\]]*\s*|[^.!?…]+$/g) || [text];
+  const out = []; let cur = '';
+  const push = s => { s = s.trim(); if (s) out.push(s); };
+  for (let s of sents){
+    while (s.length > max){
+      let cut = s.lastIndexOf(', ', max); if (cut < max*0.4) cut = s.lastIndexOf(' ', max); if (cut < 20) cut = max;
+      push(cur); cur = ''; push(s.slice(0, cut+1)); s = s.slice(cut+1);
+    }
+    if ((cur + s).length > max){ push(cur); cur = s; } else cur += s;
+  }
+  push(cur);
+  return out;
+}
+
+/* ---------- data ---------- */
+const cache = new Map();   // key -> {kind:'feed'|'thread', title, items, after, path, subs, feedKey, postId}
+let lastFeedKey = null;
+
+function postFrom(d, kind='post'){
+  const url = d.url_overridden_by_dest || d.url || '';
+  const img = (d.post_hint === 'image' || IMG_RE.test(url)) ? url : null;
+  let thumb = null;
+  try { const r = d.preview.images[0].resolutions; if (r && r.length) thumb = (r[1] || r[0]).url; } catch(e){}
+  if (!thumb && /^https?:/.test(d.thumbnail || '')) thumb = d.thumbnail;
+  return {kind, id:d.id, title:d.title||'', author:d.author, sub:d.subreddit, score:d.score, n:d.num_comments, created:d.created_utc,
+          body:d.selftext||'', img, thumb: d.over_18 ? null : thumb, link: d.is_self ? null : url, nsfw:d.over_18, permalink:d.permalink};
+}
+function flatten(children, out, depth, permalink){
+  for (const c of children || []){
+    if (c.kind === 't1'){
+      const d = c.data;
+      out.push({kind:'comment', id:d.id, author:d.author, score:d.score, created:d.created_utc, body:d.body||'', depth, isOp:d.is_submitter});
+      if (d.replies && d.replies.data) flatten(d.replies.data.children, out, depth+1, permalink);
+    } else if (c.kind === 'more' && c.data.count > 0){
+      out.push({kind:'more', depth, count:c.data.count, permalink});
+    }
+  }
+}
+function feedPath(sub, sort){
+  const base = sub ? `/r/${sub}` : '';
+  if (sort === 'top') return `${base}/top.json?t=day&limit=25`;
+  if (sort === 'topweek') return `${base}/top.json?t=week&limit=25`;
+  return `${base}/${sort}.json?limit=25`;
+}
+async function ensure(r){
+  if (cache.has(r.key)) return;
+  if (r.type === 'sub'){
+    const path = feedPath(r.sub, r.sort);
+    const j = await getJSON(path);
+    cache.set(r.key, {kind:'feed', title:'r/'+r.sub, path, after:j.data.after,
+      items:j.data.children.filter(c => c.kind === 't3').map(c => postFrom(c.data))});
+  } else if (r.type === 'search'){
+    const path = r.in ? `/r/${r.in}/search.json?q=${encodeURIComponent(r.q)}&restrict_sr=1&limit=25` : `/search.json?q=${encodeURIComponent(r.q)}&limit=25`;
+    const [pj, sj] = await Promise.all([ getJSON(path), r.in ? null : getJSON(`/subreddits/search.json?q=${encodeURIComponent(r.q)}&limit=6`).catch(() => null) ]);
+    cache.set(r.key, {kind:'feed', title:`“${r.q}”` + (r.in ? ' in r/'+r.in : ''), path, after:pj.data.after,
+      subs: sj ? sj.data.children.map(c => c.data).filter(d => d.display_name) : [],
+      items:pj.data.children.filter(c => c.kind === 't3').map(c => postFrom(c.data))});
+  } else if (r.type === 'thread'){
+    const j = await getJSON(`/comments/${r.id}.json?limit=300&depth=10&sort=${S.csort}`);
+    const op = postFrom(j[0].data.children[0].data, 'op');
+    const items = [op];
+    flatten(j[1].data.children, items, 0, op.permalink);
+    cache.set(r.key, {kind:'thread', title:op.title, items, postId:op.id, sub:op.sub, feedKey:lastFeedKey});
+  }
+}
+async function loadMore(key){
+  const c = cache.get(key);
+  if (!c || !c.after || c.loading) return false;
+  c.loading = true;
+  try {
+    const j = await getJSON(c.path + '&after=' + c.after);
+    const start = c.items.length;
+    const seen = new Set(c.items.map(p => p.id));
+    for (const ch of j.data.children) if (ch.kind === 't3' && !seen.has(ch.data.id)) c.items.push(postFrom(ch.data));
+    c.after = j.data.after;
+    if (view.key === key) renderItems(start);
+    return c.items.length > start;
+  } catch(e){ return false; }
+  finally { c.loading = false; }
+}
+
+/* ---------- routing ---------- */
+function parse(){
+  const segs = (location.hash.slice(1) || '/r/popular/hot').split('/').filter(Boolean).map(s => { try{ return decodeURIComponent(s); }catch(e){ return s; } });
+  if (segs[0] === 't' && segs[1]) return {type:'thread', id:segs[1], key:'/t/'+segs[1]};
+  if (segs[0] === 's' && segs[1]) { const r = {type:'search', q:segs[1]}; if (segs[2] === 'in' && segs[3]) r.in = segs[3]; r.key = '/s/'+encodeURIComponent(r.q) + (r.in ? '/in/'+r.in : ''); return r; }
+  const sub = segs[0] === 'r' && segs[1] ? segs[1] : 'popular';
+  const sort = ['hot','new','top','topweek','rising'].includes(segs[2]) ? segs[2] : 'hot';
+  return {type:'sub', sub, sort, key:`/r/${sub}/${sort}`};
+}
+const go = key => { location.hash = '#' + key; };
+
+let view = {key:null, els:[], items:[]};
+let routeSeq = 0;
+async function route(){
+  const r = parse(); const seq = ++routeSeq;
+  header(r);
+  view = {key:r.key, els:[], items:[]};
+  if (!cache.has(r.key)) main.innerHTML = '<div class="msg">Loading…</div>';
+  try { await ensure(r); } catch(e){ if (seq === routeSeq) main.innerHTML = `<div class="msg">${esc(e.message)}<br><br><button class="loadmore" onclick="route()">Try again</button></div>`; return; }
+  if (seq !== routeSeq) return;
+  const c = cache.get(r.key);
+  view.items = c.items;
+  if (c.kind === 'feed') lastFeedKey = r.key;
+  main.innerHTML = '';
+  if (c.subs && c.subs.length){
+    main.insertAdjacentHTML('beforeend', '<div class="sechead">Subreddits</div>' + c.subs.map(d =>
+      `<div class="subcard"><a href="#/r/${esc(d.display_name)}/hot"><b>r/${esc(d.display_name)}</b><small>${fmt(d.subscribers)} members · ${esc((d.public_description||'').slice(0,90))}</small></a>
+       <button class="chip ${subs.includes(d.display_name)?'on':''}" data-save="${esc(d.display_name)}">${subs.includes(d.display_name)?'Saved':'Save'}</button></div>`).join('')
+      + '<div class="sechead">Posts</div>');
+  }
+  if (!c.items.length) main.insertAdjacentHTML('beforeend','<div class="msg">Nothing here.</div>');
+  renderItems(0);
+  if (c.kind === 'thread'){
+    if (playing && S.switchOnOpen && Q && Q.key !== r.key) startQueue(r.key, 0);
+    if (Q && Q.key === r.key) { highlight(); setTimeout(() => scrollToNow(false), 50); }
+    else window.scrollTo(0, 0);
+  } else {
+    if (!Q || Q.key !== r.key) window.scrollTo(0, 0); else highlight();
+  }
+  updatePill();
+}
+
+function header(r){
+  $('#back').style.visibility = (history.length > 1 && location.hash && r.key !== '/r/popular/hot') ? 'visible' : 'hidden';
+  const star = $('#star');
+  if (r.type === 'sub'){
+    $('#htitle').textContent = r.sub === 'popular' ? 'Earful · Popular' : 'r/' + r.sub;
+    star.hidden = r.sub === 'popular' || r.sub === 'all';
+    const on = subs.includes(r.sub); star.textContent = on ? '★' : '☆'; star.classList.toggle('on', on); star.dataset.sub = r.sub;
+    $('#chips').hidden = false; $('#sorts').hidden = false;
+    $('#chips').innerHTML = [...new Set(['popular', ...subs])].map(s => `<a class="chip ${s===r.sub?'on':''}" href="#/r/${esc(s)}/${r.sort}">${s==='popular'?'Popular':'r/'+esc(s)}</a>`).join('');
+    $('#sorts').innerHTML = [['hot','Hot'],['new','New'],['top','Top today'],['topweek','Top week'],['rising','Rising']].map(([k,l]) => `<a class="chip ${k===r.sort?'on':''}" href="#/r/${esc(r.sub)}/${k}">${l}</a>`).join('');
+    const sc = $('#scope'); sc.hidden = r.sub === 'popular' || r.sub === 'all'; sc.querySelector('span').textContent = 'in r/' + r.sub; sc.dataset.sub = r.sub;
+  } else {
+    star.hidden = true; $('#chips').hidden = true; $('#sorts').hidden = true;
+    $('#htitle').textContent = r.type === 'search' ? 'Search' : 'Thread';
+    if (r.type === 'search'){ $('#sform').hidden = false; $('#q').value = r.q; $('#scope').hidden = true; }
+  }
+  if (r.type === 'thread'){ const c = cache.get(r.key); if (c) $('#htitle').textContent = 'r/' + c.sub; }
+}
+
+/* ---------- rendering ---------- */
+function renderItems(start){
+  const c = cache.get(view.key); if (!c) return;
+  const old = main.querySelector('.loadmore'); if (old) old.remove();
+  const frag = document.createDocumentFragment();
+  for (let i = start; i < c.items.length; i++){
+    const it = c.items[i]; const el = document.createElement('div'); el.dataset.i = i;
+    if (it.kind === 'post'){
+      el.className = 'item post';
+      el.innerHTML = `<div class="meta"><span>r/${esc(it.sub)}</span>·<span>${esc(it.author)}</span>·<span>${ago(it.created)}</span><span class="sp"></span><button class="pbtn" data-play aria-label="Listen from here">▶</button></div>
+        <div class="thumbrow"><div><div class="ptitle">${esc(it.title)}</div>${it.body ? `<div class="snip">${esc(speakable(it.body).slice(0,240))}</div>` : ''}
+        <div class="meta">⬆ ${fmt(it.score)} · 💬 ${fmt(it.n)}${it.nsfw ? ' · <b style="color:#e55">NSFW</b>' : ''}</div></div>${it.thumb ? `<img class="thumb" loading="lazy" src="${esc(it.thumb)}" alt="">` : ''}</div>`;
+    } else if (it.kind === 'op'){
+      el.className = 'item op';
+      el.innerHTML = `<div class="meta"><a class="chip" href="#/r/${esc(it.sub)}/hot">r/${esc(it.sub)}</a><span class="au">${esc(it.author)}</span>·<span>${ago(it.created)}</span><span class="sp"></span><button class="pbtn" data-play aria-label="Listen from here">▶</button></div>
+        <div class="ptitle">${esc(it.title)}</div>
+        ${it.body ? `<div class="body">${mdHtml(it.body)}</div>` : ''}
+        ${it.img && !it.nsfw ? `<img class="big" loading="lazy" src="${esc(it.img)}" alt="">` : ''}
+        ${it.link && !it.img ? `<a class="linkout" href="${esc(it.link)}" target="_blank" rel="noopener">↗ ${esc(it.link.replace(/^https?:\/\/(www\.)?/,'').slice(0,60))}</a>` : ''}
+        <div class="meta" style="margin-top:8px">⬆ ${fmt(it.score)} · 💬 ${fmt(it.n)} · <a href="https://www.reddit.com${esc(it.permalink)}" target="_blank" rel="noopener">Open on Reddit</a></div>`;
+    } else if (it.kind === 'comment'){
+      el.className = 'item c';
+      const pad = 14 + Math.min(it.depth, 8) * 13;
+      el.style.paddingLeft = pad + 'px';
+      el.innerHTML = (it.depth ? `<span class="rail" style="left:${pad - 8}px"></span>` : '') +
+        `<div class="meta"><span class="au">${esc(it.author)}</span>${it.isOp ? '<span class="opb">OP</span>' : ''}·<span>⬆ ${fmt(it.score)}</span>·<span>${ago(it.created)}</span><span class="sp"></span>${isGone(it.body) ? '' : '<button class="pbtn" data-play aria-label="Listen from here">▶</button>'}</div>
+        <div class="body">${isGone(it.body) ? '<i style="color:var(--dim)">'+esc(it.body||'[deleted]')+'</i>' : mdHtml(it.body)}</div>`;
+    } else if (it.kind === 'more'){
+      el.className = 'more';
+      el.style.paddingLeft = (14 + Math.min(it.depth, 8) * 13) + 'px';
+      el.innerHTML = `<a href="https://www.reddit.com${esc(it.permalink)}" target="_blank" rel="noopener">${it.count} more ${it.count === 1 ? 'reply' : 'replies'} on Reddit ↗</a>`;
+    }
+    view.els[i] = el; frag.appendChild(el);
+  }
+  main.appendChild(frag);
+  if (c.kind === 'feed' && c.after){
+    const b = document.createElement('button'); b.className = 'loadmore'; b.textContent = 'Load more';
+    b.onclick = () => { b.textContent = 'Loading…'; loadMore(view.key).then(ok => { if (!ok) b.textContent = 'Load more'; }); };
+    main.appendChild(b); moreObs.observe(b);
+  }
+  if (Q && Q.key === view.key) highlight();
+}
+const moreObs = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting){ moreObs.unobserve(e.target); loadMore(view.key); } }, {rootMargin:'600px'});
+
+main.addEventListener('click', e => {
+  const save = e.target.closest('[data-save]');
+  if (save){ toggleSub(save.dataset.save); save.classList.toggle('on', subs.includes(save.dataset.save)); save.textContent = subs.includes(save.dataset.save) ? 'Saved' : 'Save'; return; }
+  if (e.target.closest('a')) return;
+  const el = e.target.closest('[data-i]'); if (!el) return;
+  const i = +el.dataset.i; const it = view.items[i];
+  if (e.target.closest('[data-play]')){ startQueue(view.key, i); return; }
+  if (it.kind === 'post'){ lastFeedKey = view.key; go('/t/' + it.id); return; }
+  if (it.kind === 'comment' && !isGone(it.body)){
+    if (window.getSelection && String(window.getSelection())) return; // selecting text
+    startQueue(view.key, i);
+  }
+});
+
+/* ---------- playback ---------- */
+const synth = window.speechSynthesis;
+let Q = null;           // {key, items, title, kind, feedKey, postId, i, chunk}
+let playing = false, tok = 0, curChunks = [], curChunkText = '';
+let voices = [];
+
+function pickVoice(){
+  return voices.find(v => v.voiceURI === S.voice) ||
+    voices.find(v => /^en/i.test(v.lang) && /natural|premium|enhanced|neural/i.test(v.name)) ||
+    voices.find(v => /^en/i.test(v.lang) && /google|samantha|ava|allison/i.test(v.name)) ||
+    voices.find(v => /^en[-_]US/i.test(v.lang)) || voices.find(v => /^en/i.test(v.lang)) || voices[0] || null;
+}
+function loadVoices(){
+  voices = synth ? synth.getVoices() : [];
+  const sel = $('#voiceSel'); const cur = pickVoice();
+  const en = voices.filter(v => /^en/i.test(v.lang)); const list = en.length ? en : voices;
+  sel.innerHTML = list.map(v => `<option value="${esc(v.voiceURI)}" ${cur && v.voiceURI === cur.voiceURI ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+}
+if (synth){ loadVoices(); synth.onvoiceschanged = loadVoices; }
+
+function startQueue(key, i){
+  const c = cache.get(key); if (!c) return;
+  Q = {key, items:c.items, title:c.title, kind:c.kind, feedKey:c.feedKey, postId:c.postId, i, chunk:0};
+  playing = true; wake(true); speakFrom(i, 0); ui();
+}
+function speakFrom(i, chunk){
+  if (!synth){ alertMsg('This browser has no text-to-speech.'); return; }
+  synth.cancel();
+  const my = ++tok;
+  while (i < Q.items.length && !speechText(Q.items[i])) i++;
+  if (i >= Q.items.length){ Q.i = Q.items.length - 1; queueEnd(my); return; }
+  Q.i = i; Q.chunk = chunk; curChunkText = '';
+  curChunks = chunks(speechText(Q.items[i]));
+  highlight(); follow(); ui();
+  const step = () => {
+    if (my !== tok || !playing) return;
+    if (Q.chunk >= curChunks.length){ speakFrom(Q.i + 1, 0); return; }
+    curChunkText = curChunks[Q.chunk]; ui();
+    const u = new SpeechSynthesisUtterance(curChunkText);
+    const v = pickVoice(); if (v){ u.voice = v; u.lang = v.lang; }
+    u.rate = S.rate;
+    u.onend = () => { if (my !== tok) return; Q.chunk++; step(); };
+    u.onerror = ev => { if (my !== tok) return; if (ev.error === 'interrupted' || ev.error === 'canceled') return; Q.chunk++; setTimeout(step, 50); };
+    synth.speak(u);
+  };
+  setTimeout(step, 80); // Safari drops speak() issued right after cancel()
+}
+async function queueEnd(my){
+  if (Q.kind === 'feed'){
+    const ok = await loadMore(Q.key);
+    if (my !== tok) return;
+    if (ok){ speakFrom(Q.i + 1, 0); return; }
+  } else if (Q.kind === 'thread' && S.autoNext && Q.feedKey && cache.has(Q.feedKey)){
+    const feed = cache.get(Q.feedKey);
+    let idx = feed.items.findIndex(p => p.id === Q.postId);
+    if (idx >= 0 && idx === feed.items.length - 1) await loadMore(Q.feedKey);
+    const nxt = feed.items[idx + 1];
+    if (my !== tok) return;
+    if (nxt){
+      const key = '/t/' + nxt.id;
+      const prevLast = lastFeedKey; lastFeedKey = Q.feedKey;
+      try { await ensure({type:'thread', id:nxt.id, key}); } catch(e){ lastFeedKey = prevLast; stopAtEnd(); return; }
+      lastFeedKey = prevLast;
+      if (my !== tok) return;
+      const watching = view.key === Q.key;
+      startQueue(key, 0);
+      if (watching) go(key);
+      return;
+    }
+  }
+  stopAtEnd();
+}
+function stopAtEnd(){ playing = false; tok++; wake(false); curChunkText = 'Finished.'; ui(); }
+function play(){ if (!Q){ if (view.key && view.items.length) startQueue(view.key, firstVisible()); return; } playing = true; wake(true); speakFrom(Q.i, Q.chunk || 0); ui(); }
+function pause(){ playing = false; tok++; if (synth) synth.cancel(); wake(false); ui(); }
+function toggle(){ playing ? pause() : play(); }
+function next(){ if (!Q) return; playing = true; wake(true); speakFrom(Q.i + 1, 0); }
+function prev(){ if (!Q) return; playing = true; wake(true); let i = Q.i; if (Q.chunk < 1) { i--; while (i > 0 && !speechText(Q.items[i])) i--; } speakFrom(Math.max(0, i), 0); }
+function nextBranch(){
+  if (!Q) return;
+  let i = Q.i + 1;
+  if (Q.kind === 'thread') while (i < Q.items.length && !(Q.items[i].kind === 'comment' && Q.items[i].depth === 0)) i++;
+  playing = true; wake(true); speakFrom(i, 0);
+}
+function firstVisible(){
+  for (let i = 0; i < view.els.length; i++){ const el = view.els[i]; if (!el) continue; const r = el.getBoundingClientRect(); if (r.bottom > 120 && speechText(view.items[i])) return i; }
+  return 0;
+}
+
+/* ---------- follow-along scrolling ---------- */
+let lastUserScroll = 0, autoScrolling = false;
+['touchmove','wheel'].forEach(ev => window.addEventListener(ev, () => { lastUserScroll = Date.now(); }, {passive:true}));
+window.addEventListener('scroll', () => updatePill(), {passive:true});
+function highlight(){
+  main.querySelectorAll('.item.now').forEach(e => e.classList.remove('now'));
+  if (Q && view.key === Q.key && view.els[Q.i]) view.els[Q.i].classList.add('now');
+}
+function follow(){
+  if (!S.follow || !Q || view.key !== Q.key) return;
+  if (Date.now() - lastUserScroll < 6000) { updatePill(); return; }
+  scrollToNow(true);
+}
+function scrollToNow(smooth){
+  const el = Q && view.key === Q.key && view.els[Q.i]; if (!el) return;
+  const r = el.getBoundingClientRect(); const top = 150, bot = window.innerHeight - 140;
+  if (r.top >= top && r.top < bot - 60) return;
+  window.scrollTo({top: window.scrollY + r.top - top + 10, behavior: smooth ? 'smooth' : 'auto'});
+}
+function updatePill(){
+  const pill = $('#pill');
+  if (!Q){ pill.hidden = true; return; }
+  if (view.key !== Q.key){ pill.hidden = !playing; pill.textContent = '↩ Go to what\'s playing'; return; }
+  const el = view.els[Q.i]; if (!el){ pill.hidden = true; return; }
+  const r = el.getBoundingClientRect();
+  const off = r.bottom < 100 || r.top > window.innerHeight - 150;
+  pill.hidden = !off; pill.textContent = r.top > 0 ? '↓ Back to what\'s playing' : '↑ Back to what\'s playing';
+}
+function goNow(){
+  if (!Q) return;
+  if (view.key !== Q.key) go(Q.key);
+  else { lastUserScroll = 0; scrollToNow(true); }
+  setTimeout(updatePill, 600);
+}
+$('#pill').onclick = goNow;
+$('#np').onclick = goNow;
+
+/* ---------- screen wake lock (so you can set the phone down) ---------- */
+let wl = null;
+async function wake(on){
+  try {
+    if (on && !wl && navigator.wakeLock){ wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => { wl = null; }); }
+    else if (!on && wl){ await wl.release(); wl = null; }
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && playing) wake(true); });
+
+/* ---------- UI ---------- */
+function ui(){
+  const pb = $('#playBtn'); pb.textContent = playing ? '❚❚' : '▶'; $('#ePlay').textContent = playing ? '❚❚' : '▶';
+  $('#rateBtn').textContent = S.rate.toFixed(1) + '×';
+  if (Q){
+    const it = Q.items[Q.i] || {};
+    $('#npTitle').textContent = (Q.kind === 'thread' ? '🎧 ' : '🎧 Feed · ') + Q.title;
+    $('#npText').textContent = curChunkText || '…';
+    $('#eTitle').textContent = Q.title;
+    $('#eAuthor').textContent = it.kind === 'comment' ? (it.depth ? '↳ ' : '') + it.author : (it.kind === 'post' ? 'r/' + it.sub : '');
+    $('#eText').textContent = curChunkText;
+  }
+  updatePill();
+}
+function alertMsg(m){ $('#npTitle').textContent = 'Heads up'; $('#npText').textContent = m; }
+
+$('#playBtn').onclick = toggle; $('#ePlay').onclick = toggle;
+$('#nextBtn').onclick = next; $('#eNext').onclick = next;
+$('#prevBtn').onclick = prev; $('#ePrev').onclick = prev;
+$('#branchBtn').onclick = nextBranch;
+const RATES = [0.8, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0];
+$('#rateBtn').onclick = () => { const i = RATES.findIndex(r => r > S.rate + 0.01); S.rate = RATES[i < 0 ? 0 : i]; saveS(); ui(); if (playing) speakFrom(Q.i, Q.chunk); };
+$('#eyeBtn').onclick = () => { $('#eyes').hidden = false; ui(); };
+$('#eClose').onclick = () => { $('#eyes').hidden = true; };
+
+$('#back').onclick = () => history.back();
+$('#htitle').onclick = () => window.scrollTo({top:0, behavior:'smooth'});
+$('#sbtn').onclick = () => { const f = $('#sform'); f.hidden = !f.hidden; if (!f.hidden) $('#q').focus(); };
+$('#sform').onsubmit = e => {
+  e.preventDefault(); const v = $('#q').value.trim(); if (!v) return; $('#q').blur();
+  const m = v.match(/^\/?r\/([A-Za-z0-9_]+)$/); if (m){ go(`/r/${m[1]}/hot`); return; }
+  const sc = $('#scope'); const scoped = !sc.hidden && $('#scopeCb').checked;
+  const key = '/s/' + encodeURIComponent(v) + (scoped ? '/in/' + sc.dataset.sub : '');
+  cache.delete(key); go(key);
+};
+function toggleSub(s){ subs = subs.includes(s) ? subs.filter(x => x !== s) : [...subs, s]; saveSubs(); }
+$('#star').onclick = () => { toggleSub($('#star').dataset.sub); header(parse()); };
+
+/* settings */
+function openSheet(){
+  $('#rateRange').value = S.rate; $('#rateLbl').textContent = S.rate.toFixed(1) + '×';
+  $('#optAnnounce').checked = S.announce; $('#optAutoNext').checked = S.autoNext; $('#optSwitch').checked = S.switchOnOpen;
+  $('#optFollow').checked = S.follow; $('#optFeedBody').checked = S.feedBody; $('#csortSel').value = S.csort;
+  loadVoices(); $('#sheet').hidden = false;
+}
+$('#gearBtn').onclick = openSheet;
+$('#rateRange').oninput = e => { S.rate = +e.target.value; $('#rateLbl').textContent = S.rate.toFixed(1) + '×'; };
+$('#voiceSel').onchange = e => { S.voice = e.target.value; };
+$('#sheet').onclick = e => { if (e.target.id === 'sheet') closeSheet(); };
+$('#sheetDone').onclick = closeSheet;
+function closeSheet(){
+  const oldSort = S.csort;
+  Object.assign(S, {announce:$('#optAnnounce').checked, autoNext:$('#optAutoNext').checked, switchOnOpen:$('#optSwitch').checked,
+    follow:$('#optFollow').checked, feedBody:$('#optFeedBody').checked, csort:$('#csortSel').value});
+  saveS(); $('#sheet').hidden = true; ui();
+  if (oldSort !== S.csort){ for (const k of [...cache.keys()]) if (k.startsWith('/t/') && (!Q || Q.key !== k)) cache.delete(k); }
+  if (playing) speakFrom(Q.i, Q.chunk);
+}
+
+window.addEventListener('hashchange', route);
+route(); ui();
+</script>
+</body>
+</html>
